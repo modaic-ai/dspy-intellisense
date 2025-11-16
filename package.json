@@ -1,0 +1,95 @@
+{
+  "name": "dspy-intellisense",
+  "displayName": "dspy-intellisense",
+  "description": "Advanced syntax highlighting and typing support for DSPy",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "AI",
+    "Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dspy-intellisense.helloWorld",
+        "title": "Hello World"
+      }
+    ],
+    "semanticTokenTypes": [
+      {
+        "id": "dspyField",
+        "superType": "property",
+        "description": "DSPy prediction output field (e.g., result.output)"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "python",
+        "scopes": {
+          "dspyField": [
+            "variable.other.property.python",
+            "variable.other.member.python",
+            "meta.member.access.python"
+          ]
+        }
+      }
+    ],
+    "configuration": {
+      "title": "DSPy IntelliSense",
+      "properties": {
+        "dspyIntellisense.inlayHints.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show type hints inline for DSPy prediction fields"
+        },
+        "dspyIntellisense.semanticHighlighting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight DSPy prediction fields with semantic colors"
+        },
+        "dspyIntellisense.decorationHighlighting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use fallback decorations to color DSPy output fields (overrides Pylance coloring)"
+        },
+        "dspyIntellisense.decorationHighlighting.color": {
+          "type": "string",
+          "default": "#9CDCFE",
+          "description": "Hex color for DSPy output fields decoration (used if fallback enabled)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.106.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.46.3",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  },
+  "files": [
+    "out",
+    "dspy_sig_introspect.py",
+    "package.json",
+    "README.md"
+  ]
+}
