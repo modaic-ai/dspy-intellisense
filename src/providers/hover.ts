@@ -19,7 +19,9 @@ export function registerHoverProvider(
         }
 
         const range = doc.getWordRangeAtPosition(position);
-        if (!range) return;
+        if (!range) {
+          return;
+        }
 
         const word = doc.getText(range);
         log(`Hover word: "${word}"`);
@@ -28,7 +30,9 @@ export function registerHoverProvider(
         if (pred) {
           log(`Found prediction: ${word} -> ${pred.signature}`);
           const sig = info.signatures[pred.signature];
-          if (!sig) return;
+          if (!sig) {
+            return;
+          }
 
           const fields = [...sig.outputs];
           const md = new vscode.MarkdownString();
@@ -53,7 +57,9 @@ export function registerHoverProvider(
         if (mod) {
           log(`Found module: ${word} -> ${mod.signature}`);
           const sig = info.signatures[mod.signature];
-          if (!sig) return;
+          if (!sig) {
+            return;
+          }
 
           const inSig = sig.inputs
             .map((f) => `${f.name}: ${f.annotation ?? "Any"}`)
@@ -72,6 +78,120 @@ export function registerHoverProvider(
           md.appendMarkdown(`**DSPy Signature:** \`${sig.name}\`\n\n`);
           md.isTrusted = true;
           return new vscode.Hover(md, range);
+        }
+
+        // Hover on keyword-argument names inside a call, e.g., module(foo=...)
+        // Detect if the word is followed by '=' (possibly with spaces)
+        const rightOfWord = doc.getText(
+          new vscode.Range(range.end, range.end.translate(0, 50))
+        );
+        const isKwArgName = /^\s*=/.test(rightOfWord);
+        if (isKwArgName) {
+          log(`Kwarg candidate detected for "${word}"`);
+          // Find the nearest callee name preceding '(' within a small lookback window
+          let calleeName: string | undefined;
+          const lookbackLines = 5;
+          for (
+            let lineIdx = position.line;
+            lineIdx >= Math.max(0, position.line - lookbackLines);
+            lineIdx--
+          ) {
+            const textLine = doc.lineAt(lineIdx).text;
+            const searchEnd =
+              lineIdx === position.line
+                ? range.start.character
+                : textLine.length;
+            const segment = textLine.slice(0, searchEnd);
+            const parenIdx = segment.lastIndexOf("(");
+            if (parenIdx !== -1) {
+              const beforeParen = segment.slice(0, parenIdx);
+              const m = /(\w+)\s*$/.exec(beforeParen);
+              if (m) {
+                calleeName = m[1];
+                log(`Resolved callee for kwarg "${word}": ${calleeName}`);
+                break;
+              }
+            }
+          }
+
+          if (calleeName) {
+            const modInfo = info.modules[calleeName];
+            if (modInfo) {
+              log(`Detected kwarg "${word}" in call to ${calleeName}`);
+              const sig = info.signatures[modInfo.signature];
+              if (sig) {
+                const inputField = sig.inputs.find((f) => f.name === word);
+                if (inputField) {
+                  const md = new vscode.MarkdownString();
+                  md.appendCodeblock(
+                    `(parameter) ${inputField.name}: ${
+                      inputField.annotation ?? "Any"
+                    }`,
+                    "python"
+                  );
+                  if (inputField.description) {
+                    md.appendMarkdown(`\n${inputField.description}\n`);
+                  }
+                  md.isTrusted = true;
+                  return new vscode.Hover(md, range);
+                }
+                log(
+                  `No input field named "${word}" found on signature ${sig.name}`
+                );
+              }
+              log(
+                `No signature found for module ${calleeName} -> ${modInfo.signature}`
+              );
+            } else {
+              log(
+                `Callee "${calleeName}" not present in modules map; attempting LHS prediction fallback`
+              );
+              // Fallback: try to resolve signature via LHS prediction variable on the same line
+              const lineText = doc.lineAt(position.line).text;
+              const lhsMatch = new RegExp(
+                String.raw`(\w+)\s*=\s*${calleeName}\s*\($`
+              ).exec(lineText.slice(0, range.start.character));
+              if (lhsMatch) {
+                const lhsVar = lhsMatch[1];
+                const predInfo = info.predictions[lhsVar];
+                if (predInfo) {
+                  const sig = info.signatures[predInfo.signature];
+                  if (sig) {
+                    const inputField = sig.inputs.find((f) => f.name === word);
+                    if (inputField) {
+                      const md = new vscode.MarkdownString();
+                      md.appendCodeblock(
+                        `(parameter) ${inputField.name}: ${
+                          inputField.annotation ?? "Any"
+                        }`,
+                        "python"
+                      );
+                      if (inputField.description) {
+                        md.appendMarkdown(`\n${inputField.description}\n`);
+                      }
+                      md.isTrusted = true;
+                      return new vscode.Hover(md, range);
+                    }
+                    log(
+                      `No input field named "${word}" found on signature ${sig.name} (via LHS prediction)`
+                    );
+                  } else {
+                    log(
+                      `Prediction ${lhsVar} has unknown signature ${predInfo.signature}`
+                    );
+                  }
+                } else {
+                  log(
+                    `No prediction info found for LHS variable ${lhsVar} (fallback)`
+                  );
+                }
+              } else {
+                log(
+                  `Could not match pattern "lhs = ${calleeName}(" on current line for fallback`
+                );
+              }
+            }
+          }
         }
 
         const line = doc.lineAt(position.line).text;

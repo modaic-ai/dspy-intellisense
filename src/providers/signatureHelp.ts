@@ -24,22 +24,28 @@ export function registerSignatureHelpProvider(
           const upToCursor = lineText.slice(0, position.character);
 
           const callMatch = /(\w+)\s*\([^()]*$/.exec(upToCursor);
-          if (!callMatch) return;
+          if (!callMatch) {
+            return;
+          }
 
           const calleeName = callMatch[1];
           log(`Signature help for: ${calleeName}`);
 
           const mod = info.modules[calleeName];
-          if (!mod) return;
+          if (!mod) {
+            return;
+          }
 
           const sig = info.signatures[mod.signature];
-          if (!sig) return;
+          if (!sig) {
+            return;
+          }
 
           const signatureHelp = new vscode.SignatureHelp();
           const signature = new vscode.SignatureInformation(
             `${calleeName}(${sig.inputs
               .map((f) => `${f.name}: ${f.annotation ?? "Any"}`)
-              .join(", ")}) -> Prediction`
+              .join(", ")}) -> Prediction[${sig.name}]`
           );
 
           signature.documentation = new vscode.MarkdownString(
