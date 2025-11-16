@@ -1,71 +1,49 @@
 # dspy-intellisense README
 
-This is the README for your extension "dspy-intellisense". After writing up a brief description, we recommend including the following sections.
+IntelliSense for DSPy. Tracks and annotates input and output fields from Signatures to Predictions.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Completion suggestions for inputs
 
-For example if there is an image subfolder under your extension project workspace:
+![Input Completions ](images/input_completion.png)
 
-\!\[feature X\]\(images/feature-x.png\)
+### Hover annotations for inputs
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Input Annotations](images/input_hover.png)
 
-## Requirements
+### Hover annotations for `Prediction` instances
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+![Prediction Annotations](images/prediction_hover.png)
+
+### Completion suggestions for outputs
+
+![Output Completions](images/output_completion.png)
+
+### Hover annotations for outputs
+
+![Output Annotations](images/output_hover.png)
+
+### Works with inline signatures too!
+
+![Inline Signature](images/inline_signature.png)
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+You can change the highlight color of Prediction output fields by changing the following VSCode `settings.json`. Note, by default the highlight color is `#9CDCFE`
 
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+```json
+{
+  "dspyIntellisense.decorationHighlighting.color": "#a5e075" // change to your preferred output field highlight color
+}
+```
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- The highlight color of output fields will not match your theme's color for attributes by default. You must configure it mannually using the `"dspyIntellisense.decorationHighlighting.color"` setting.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Initial release of DSPy IntelliSense
