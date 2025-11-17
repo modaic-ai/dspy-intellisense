@@ -1,4 +1,4 @@
-# dspy-intellisense README
+# dspy-intellisense by Modaic
 
 IntelliSense for DSPy. Tracks and annotates input and output fields from Signatures to Predictions.
 
