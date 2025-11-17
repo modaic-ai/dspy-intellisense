@@ -12,7 +12,7 @@ IntelliSense for DSPy. Tracks and annotates input and output fields from Signatu
 
 ![Input Annotations](images/input_hover.png)
 
-### Hover annotations for `Prediction` instances
+### Hover annotations for `Prediction` objects
 
 ![Prediction Annotations](images/prediction_hover.png)
 
