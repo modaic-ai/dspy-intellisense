@@ -2,7 +2,7 @@
   "name": "dspy-intellisense",
   "displayName": "dspy-intellisense",
   "description": "Advanced syntax highlighting and typing support for DSPy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "Modaic",
   "icon": "images/dspy-logo.png",
   "repository": {
