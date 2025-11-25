@@ -116,7 +116,7 @@ class DSpyIntrospector(ast.NodeVisitor):
         # If exactly one colon on the side, treat it as a group annotation
         if side.count(":") == 1:
             names_part, type_part = side.split(":", 1)
-            annotation = type_part.strip() or None
+            annotation = type_part.strip() or "Any"
             names = [n.strip() for n in names_part.split(",") if n.strip()]
             return [
                 FieldInfo(name=name, kind=kind, annotation=annotation, description=None)
@@ -129,10 +129,10 @@ class DSpyIntrospector(ast.NodeVisitor):
             if ":" in token:
                 name_part, type_part = token.split(":", 1)
                 name = name_part.strip()
-                annotation = type_part.strip() or None
+                annotation = type_part.strip() or "Any"
             else:
                 name = token
-                annotation = None
+                annotation = "Any"
             fields.append(
                 FieldInfo(name=name, kind=kind, annotation=annotation, description=None)
             )
@@ -270,13 +270,41 @@ class DSpyIntrospector(ast.NodeVisitor):
                         f = FieldInfo(
                             name=field_name,
                             kind=kind,
-                            annotation=self._annotation_str(stmt.annotation),
+                            annotation=self._annotation_str(stmt.annotation) or "Any",
                             description=description,
                         )
                         if kind == "input":
                             inputs.append(f)
                         else:
                             outputs.append(f)
+                # field = dspy.InputField(...)  (no annotation provided)
+                elif isinstance(stmt, ast.Assign):
+                    description: Optional[str] = None
+                    kind: Optional[FieldKind] = None
+                    value = stmt.value
+                    if value is not None:
+                        if self._is_input_field_call(value):
+                            kind = "input"
+                            if isinstance(value, ast.Call):
+                                description = self._extract_field_description(value)
+                        elif self._is_output_field_call(value):
+                            kind = "output"
+                            if isinstance(value, ast.Call):
+                                description = self._extract_field_description(value)
+                    if kind is not None:
+                        for tgt in stmt.targets:
+                            if isinstance(tgt, ast.Name):
+                                field_name = tgt.id
+                                f = FieldInfo(
+                                    name=field_name,
+                                    kind=kind,
+                                    annotation="Any",
+                                    description=description,
+                                )
+                                if kind == "input":
+                                    inputs.append(f)
+                                else:
+                                    outputs.append(f)
 
             self.signatures[node.name] = SignatureInfo(
                 name=node.name,
