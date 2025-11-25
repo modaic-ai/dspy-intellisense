@@ -79,6 +79,28 @@ class DSpyIntrospector(ast.NodeVisitor):
 
     # ------- Helpers -----------------------------------------------------
 
+    def _safe_unparse(self, node: ast.AST) -> Optional[str]:
+        """
+        Best-effort stringify for simple Name/Attribute nodes.
+        Returns dotted identifier like 'self.predict' when possible.
+        """
+        try:
+            return ast.unparse(node)  # type: ignore[attr-defined]
+        except Exception:
+            if isinstance(node, ast.Name):
+                return node.id
+            if isinstance(node, ast.Attribute):
+                # Fallback manual join for Attribute chains
+                parts = []
+                cur: Optional[ast.AST] = node
+                while isinstance(cur, ast.Attribute):
+                    parts.append(cur.attr)
+                    cur = cur.value  # type: ignore[assignment]
+                if isinstance(cur, ast.Name):
+                    parts.append(cur.id)
+                    return ".".join(reversed(parts))
+            return None
+
     def _parse_signature_side(self, side_text: str, kind: FieldKind) -> List[FieldInfo]:
         """
         Parse one side of an inline signature string.
@@ -230,7 +252,6 @@ class DSpyIntrospector(ast.NodeVisitor):
                     field_name = stmt.target.id
                     kind: Optional[FieldKind] = None
                     description: Optional[str] = None
-
                     if stmt.value is not None:
                         if self._is_input_field_call(stmt.value):
                             kind = "input"
@@ -299,10 +320,28 @@ class DSpyIntrospector(ast.NodeVisitor):
                     if isinstance(sig_expr, ast.Name):
                         sig_name = sig_expr.id
                         for target in node.targets:
+                            # Simple name on LHS
                             if isinstance(target, ast.Name):
                                 var_name = target.id
                                 self.modules[var_name] = ModuleInfo(
                                     name=var_name,
+                                    signature=sig_name,
+                                    line=node.lineno,
+                                    column=node.col_offset + 1,
+                                )
+                            # Attribute on LHS, e.g. self.predict = dspy.Predict(...)
+                            elif isinstance(target, ast.Attribute):
+                                # Store both short name ('predict') and dotted ('self.predict')
+                                short_name = target.attr
+                                dotted = self._safe_unparse(target) or short_name
+                                self.modules[short_name] = ModuleInfo(
+                                    name=short_name,
+                                    signature=sig_name,
+                                    line=node.lineno,
+                                    column=node.col_offset + 1,
+                                )
+                                self.modules[dotted] = ModuleInfo(
+                                    name=dotted,
                                     signature=sig_name,
                                     line=node.lineno,
                                     column=node.col_offset + 1,
@@ -324,13 +363,43 @@ class DSpyIntrospector(ast.NodeVisitor):
                                     line=node.lineno,
                                     column=node.col_offset + 1,
                                 )
+                            elif isinstance(target, ast.Attribute):
+                                short_name = target.attr
+                                dotted = self._safe_unparse(target) or short_name
+                                self.modules[short_name] = ModuleInfo(
+                                    name=short_name,
+                                    signature=sig_info.name,
+                                    line=node.lineno,
+                                    column=node.col_offset + 1,
+                                )
+                                self.modules[dotted] = ModuleInfo(
+                                    name=dotted,
+                                    signature=sig_info.name,
+                                    line=node.lineno,
+                                    column=node.col_offset + 1,
+                                )
 
             # Case 2: prediction variable: result = my_predict(...)
             # Here func is typically a Name like "my_predict"
-            if isinstance(func, ast.Name):
-                callee_name = func.id
-                if callee_name in self.modules:
-                    sig_name = self.modules[callee_name].signature
+            if isinstance(func, ast.Name) or isinstance(func, ast.Attribute):
+                candidates: List[str] = []
+                if isinstance(func, ast.Name):
+                    candidates.append(func.id)
+                else:
+                    # Attribute call like self.predict(...)
+                    dotted = self._safe_unparse(func)
+                    if dotted:
+                        candidates.append(dotted)
+                    # Also consider short name 'predict'
+                    candidates.append(func.attr)
+
+                sig_name: Optional[str] = None
+                for cand in candidates:
+                    if cand in self.modules:
+                        sig_name = self.modules[cand].signature
+                        break
+
+                if sig_name:
                     for target in node.targets:
                         if isinstance(target, ast.Name):
                             var_name = target.id

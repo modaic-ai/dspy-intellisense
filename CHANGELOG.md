@@ -7,3 +7,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 - Initial release
+
+## [0.0.3] - 2025-11-24
+
+- Fixed bug where instance attributes were not being introspected correctly.

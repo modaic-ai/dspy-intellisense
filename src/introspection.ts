@@ -66,6 +66,7 @@ export function createIntrospector(
           Object.keys(result.predictions).length
         } prediction(s) from ${doc.fileName}`
       );
+      log(`result: ${JSON.stringify(result)}`);
       // Signal that semantic tokens may need to refresh
       introspectionUpdatedEmitter.fire(doc.uri.toString());
     } catch (error: any) {
