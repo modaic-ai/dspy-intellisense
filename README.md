@@ -1,6 +1,8 @@
+[![Docs](https://img.shields.io/badge/docs-online-success?style=for-the-badge)](https://docs.modaic.dev/modaic/dspy-intellisense)
+
 # dspy-intellisense by Modaic
 
-IntelliSense for DSPy. Tracks and annotates input and output fields from Signatures to Predictions.
+IntelliSense for DSPy. Tracks and annotates input and output fields from Signatures to Predictions. Created by [modaic.dev](https://modaic.dev).
 
 ## Features
 
