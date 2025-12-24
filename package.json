@@ -2,9 +2,10 @@
   "name": "dspy-intellisense",
   "displayName": "dspy-intellisense",
   "description": "Advanced syntax highlighting and typing support for DSPy",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "Modaic",
   "icon": "images/dspy-logo.png",
+  "homepage": "https://docs.modaic.dev/modaic/dspy-intellisense",
   "repository": {
     "type": "git",
     "url": "https://github.com/modaic-ai/dspy-intellisense"
